@@ -16,7 +16,7 @@ TRANSPORT_PROFILE = "808"
 DEFAULT_RESPONSE_FORMAT = "url"
 DEFAULT_PENDING_TOTAL_TIMEOUT = 600
 DEFAULT_POLL_INTERVAL = 5
-SUPPORTED_MODELS = {"gpt-image-2", "gpt-image-2-token"}
+SUPPORTED_MODELS = {"gpt-image-2", "gpt-image-2-token", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"}
 
 PENDING_STATUSES = {"queued", "pending", "processing", "in_progress", "running"}
 SUCCESS_STATUSES = {"completed", "complete", "succeeded", "success"}

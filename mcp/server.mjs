@@ -48,7 +48,7 @@ const BANANA_MODEL_CAPABILITY_SPEC = JSON.parse(
 );
 const OPENAI_IMAGES_808_DEFAULT_TIMEOUT_SECONDS = 600;
 const OPENAI_IMAGES_808_DEFAULT_RESPONSE_FORMAT = "url";
-const OPENAI_IMAGES_808_SUPPORTED_MODELS = new Set(["gpt-image-2", "gpt-image-2-token"]);
+const OPENAI_IMAGES_808_SUPPORTED_MODELS = new Set(["gpt-image-2", "gpt-image-2-token", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]);
 const EZAI_BANANA_DEFAULT_RESPONSE_FORMAT = "url";
 const EZAI_BANANA_SUPPORTED_RESPONSE_FORMATS = new Set(["url", "b64_json"]);
 
@@ -567,7 +567,7 @@ async function resolveProvider(requestedProvider, requireKey = true) {
       throw new Error(
         `Provider "${providerName}" model "${model}" is not supported by transport_profile ` +
           `"${TRANSPORT_PROFILE_808}". ` +
-          `Use gpt-image-2 or gpt-image-2-token.`,
+          `Supported models: ${Array.from(OPENAI_IMAGES_808_SUPPORTED_MODELS).join(", ")}.`,
       );
     }
     const configuredTimeout = raw.timeout;
@@ -847,7 +847,7 @@ function openaiImages808Arguments(args, promptFile, provider) {
 
 function defaultQualityForProvider(provider) {
   const model = nonEmptyString(provider?.model)?.toLowerCase();
-  return model === "gpt-image-2" ? "high" : "medium";
+  return model.startsWith("gpt-image-2") ? "high" : "medium";
 }
 
 const RESOLUTION_TOKEN_PATTERN = String.raw`(?:\b\d+(?:\.\d+)?\s*k\b|\b\d{3,5}\s*[x×]\s*\d{3,5}\b)`;

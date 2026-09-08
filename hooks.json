@@ -1,0 +1,15 @@
+{
+  "fmage-intercept-native-image": {
+    "PreToolUse": [
+      {
+        "matcher": "generate_image",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./scripts/intercept_native_image.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

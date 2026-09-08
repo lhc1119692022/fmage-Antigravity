@@ -122,12 +122,48 @@ def test_mcp_server_syntax() -> None:
     require_success(check, "Node syntax check on mcp/server.mjs")
 
 
+def verify_rules() -> None:
+    rule_file = PLUGIN_ROOT / "rules" / "AGENTS.md"
+    if not rule_file.is_file():
+        raise RuntimeError(f"Missing plugin rules file: {rule_file}")
+    content = rule_file.read_text(encoding="utf-8")
+    if "Fmage" not in content or "generate_image" not in content:
+        raise RuntimeError("rules/AGENTS.md must define rules for Fmage and image generation")
+
+
+def verify_hooks() -> None:
+    hooks_file = PLUGIN_ROOT / "hooks.json"
+    if not hooks_file.is_file():
+        raise RuntimeError(f"Missing plugin hooks configuration: {hooks_file}")
+    try:
+        data = json.loads(hooks_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid JSON in hooks.json: {hooks_file}") from error
+
+    hook_cfg = data.get("fmage-intercept-native-image")
+    if not isinstance(hook_cfg, dict):
+        raise RuntimeError("hooks.json must define 'fmage-intercept-native-image'")
+    pre_tool_use = hook_cfg.get("PreToolUse")
+    if not isinstance(pre_tool_use, list) or not pre_tool_use:
+        raise RuntimeError("hooks.json fmage-intercept-native-image must define PreToolUse handlers")
+
+    node = shutil.which("node")
+    script = PLUGIN_ROOT / "scripts" / "intercept_native_image.mjs"
+    if not script.is_file():
+        raise RuntimeError(f"Missing hook handler script: {script}")
+    if node:
+        check = run_command([node, "--check", str(script)], capture_output=True)
+        require_success(check, "Node syntax check on scripts/intercept_native_image.mjs")
+
+
 def refresh_plugin(*, check_only: bool) -> None:
     manifest = verify_plugin_manifest()
     version = manifest.get("version", "unknown")
     verify_mcp_config()
     skills = verify_skills()
     verify_workspace_registration()
+    verify_rules()
+    verify_hooks()
     test_mcp_server_syntax()
 
     status = "verified" if check_only else "refreshed and verified"

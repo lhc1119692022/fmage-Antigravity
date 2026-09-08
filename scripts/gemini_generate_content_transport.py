@@ -57,7 +57,7 @@ class ApiError(RuntimeError):
         if status in {401, 403}:
             message = (
                 "provider rejected the API key or access is forbidden. "
-                "Configure the selected provider in ~/.codex/fmage/providers.json.\n"
+                "Configure the selected provider in ~/.gemini/antigravity/fmage/providers.json.\n"
                 f"Provider response: {body[:1000]}"
             )
         super().__init__(message)
@@ -285,7 +285,7 @@ def api_key(args: argparse.Namespace) -> str:
     if not value:
         raise RuntimeError(
             "Missing provider API key. Configure the selected provider in "
-            "~/.codex/fmage/providers.json."
+            "~/.gemini/antigravity/fmage/providers.json."
         )
     return value
 

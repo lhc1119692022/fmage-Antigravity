@@ -58,8 +58,12 @@ def effective_config_path(explicit_path: Path | None = None) -> Path:
     if fmage_config:
         return Path(fmage_config).expanduser().resolve(strict=False)
 
-    codex_home = non_empty_string(os.environ.get("CODEX_HOME"))
-    base_dir = Path(codex_home).expanduser() if codex_home else Path.home() / ".codex"
+    antigravity_home = non_empty_string(os.environ.get("ANTIGRAVITY_HOME"))
+    base_dir = (
+        Path(antigravity_home).expanduser()
+        if antigravity_home
+        else Path.home() / ".gemini" / "antigravity"
+    )
     return (base_dir / "fmage" / "providers.json").resolve(strict=False)
 
 
@@ -196,7 +200,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        help="Explicit providers.json path; otherwise use FMAGE_CONFIG/CODEX_HOME defaults.",
+        help="Explicit providers.json path; otherwise use FMAGE_CONFIG/ANTIGRAVITY_HOME defaults.",
     )
     return parser.parse_args()
 

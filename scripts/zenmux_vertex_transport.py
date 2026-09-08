@@ -52,7 +52,7 @@ def iso_now() -> str:
 
 
 def credential_help() -> str:
-    return "Configure the selected provider in ~/.codex/fmage/providers.json."
+    return "Configure the selected provider in ~/.gemini/antigravity/fmage/providers.json."
 
 
 def configured_value(file_value: str, env_name: str, default: str = "") -> str:
@@ -570,7 +570,7 @@ def run_request(args: argparse.Namespace, references: list[str]) -> dict[str, An
         args.timeout,
         preferred_format=args.output_format,
         base64_keys=("b64_json", "base64", "bytesBase64Encoded"),
-        user_agent="codex-provider-imagegen/1.0",
+        user_agent="antigravity-fmage-imagegen/1.0",
     )
     timing["download_completed_at"] = iso_now()
     image_metadata = collect_image_metadata(images)

@@ -1,7 +1,0 @@
-interface:
-  display_name: "Fmage 图片生成"
-  short_description: "通过可切换中转平台生成和编辑图片"
-  default_prompt: "Use $fmage to generate or edit this image."
-
-policy:
-  allow_implicit_invocation: true

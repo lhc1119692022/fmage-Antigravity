@@ -1,7 +1,0 @@
-interface:
-  display_name: "Fmage 配置"
-  short_description: "快速显示 providers.json 文件位置"
-  default_prompt: "Use $fmage-config to immediately show the exact providers.json path as a clickable local file link."
-
-policy:
-  allow_implicit_invocation: true

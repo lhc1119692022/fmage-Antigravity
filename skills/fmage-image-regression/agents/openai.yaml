@@ -1,7 +1,0 @@
-interface:
-  display_name: "Fmage 图片退步"
-  short_description: "劣化图片→参考2使用mod移除1的模糊和噪点效果，高清放大至nK"
-  default_prompt: "Use $fmage-image-regression to locally degrade this image with the fixed 1K, blur, and monochrome-noise pipeline."
-
-policy:
-  allow_implicit_invocation: true

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "Fmage": {
+    "fmage": {
       "command": "node",
       "args": [
         "./mcp/server.mjs"

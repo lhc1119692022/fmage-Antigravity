@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh the local Fmage plugin and provider configuration."""
+"""Refresh and verify the local Fmage Antigravity native plugin and provider configuration."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -15,7 +16,6 @@ from typing import Any
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_NAME = "fmage"
-DEFAULT_MARKETPLACE = "personal"
 
 
 def run_command(command: list[str], *, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
@@ -38,132 +38,100 @@ def require_success(result: subprocess.CompletedProcess[str], label: str) -> Non
     raise RuntimeError(f"{label} failed{': ' + detail if detail else ''}")
 
 
-def resolve_codex_cli() -> Path:
-    configured = os.environ.get("FMAGE_CODEX_CLI", "").strip()
-    candidates = [
-        Path(configured).expanduser() if configured else None,
-        Path.home() / ".codex" / "plugins" / ".plugin-appserver" / "codex.exe",
-    ]
-    found = shutil.which("codex")
-    if found:
-        candidates.append(Path(found))
-    for candidate in candidates:
-        if candidate and candidate.is_file():
-            return candidate
-    raise RuntimeError(
-        "No user-writable Codex CLI was found. Set FMAGE_CODEX_CLI to the app-server codex.exe."
-    )
-
-
-def resolve_power_shell() -> str:
-    for executable in ("pwsh.exe", "powershell.exe", "pwsh", "powershell"):
-        found = shutil.which(executable)
-        if found:
-            return found
-    raise RuntimeError("PowerShell is required to validate the local Codex plugin.")
-
-
-def helper_path(name: str) -> Path:
-    path = Path.home() / ".codex" / "skills" / ".system" / "plugin-creator" / "scripts" / name
-    if not path.is_file():
-        raise RuntimeError(f"Codex plugin helper is missing: {path}")
-    return path
-
-
-def read_marketplace_name() -> str:
-    result = run_command(
-        [sys.executable, str(helper_path("read_marketplace_name.py"))],
-        capture_output=True,
-    )
-    require_success(result, "reading marketplace name")
-    name = (result.stdout or "").strip()
-    if not name:
-        raise RuntimeError("The personal marketplace name is empty.")
-    return name
-
-
-def source_version() -> str:
-    manifest_path = PLUGIN_ROOT / ".codex-plugin" / "plugin.json"
-    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    version = payload.get("version")
-    if not isinstance(version, str) or not version.strip():
-        raise RuntimeError(f"Plugin manifest has no usable version: {manifest_path}")
-    return version
-
-
-def plugin_list(cli: Path) -> dict[str, Any]:
-    result = run_command([str(cli), "plugin", "list", "--json"], capture_output=True)
-    require_success(result, "listing installed plugins")
+def verify_plugin_manifest() -> dict[str, Any]:
+    manifest_path = PLUGIN_ROOT / "plugin.json"
+    if not manifest_path.is_file():
+        raise RuntimeError(f"Missing Antigravity plugin manifest: {manifest_path}")
     try:
-        payload = json.loads(result.stdout or "")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
-        raise RuntimeError("Codex plugin list did not return valid JSON.") from error
-    if not isinstance(payload, dict):
-        raise RuntimeError("Codex plugin list returned an invalid payload.")
-    return payload
+        raise RuntimeError(f"Invalid JSON in plugin manifest: {manifest_path}") from error
+
+    if not isinstance(manifest, dict):
+        raise RuntimeError(f"Plugin manifest must be a JSON object: {manifest_path}")
+    if manifest.get("name") != PLUGIN_NAME:
+        raise RuntimeError(f"Plugin manifest 'name' must be '{PLUGIN_NAME}'; got {manifest.get('name')!r}")
+    return manifest
 
 
-def verify_plugin(cli: Path, marketplace: str) -> None:
-    payload = plugin_list(cli)
-    expected_id = f"{PLUGIN_NAME}@{marketplace}"
-    records = payload.get("installed")
-    if not isinstance(records, list):
-        raise RuntimeError("Codex plugin list has no installed plugin array.")
-    record = next(
-        (item for item in records if isinstance(item, dict) and item.get("pluginId") == expected_id),
-        None,
-    )
-    expected_version = source_version()
-    if not isinstance(record, dict):
-        raise RuntimeError(f"Plugin {expected_id} is not installed.")
-    if record.get("version") != expected_version:
-        raise RuntimeError(
-            f"Plugin {expected_id} has version {record.get('version')!r}; expected {expected_version!r}."
-        )
-    if record.get("installed") is not True or record.get("enabled") is not True:
-        raise RuntimeError(f"Plugin {expected_id} is not both installed and enabled.")
-    cache_path = (
-        Path.home()
-        / ".codex"
-        / "plugins"
-        / "cache"
-        / marketplace
-        / PLUGIN_NAME
-        / expected_version
-    )
-    required_files = [
-        cache_path / "scripts" / "gemini_generate_content_transport.py",
-    ]
-    for required_file in required_files:
-        if not required_file.is_file():
-            raise RuntimeError(f"Installed plugin cache is missing {required_file}.")
+def verify_mcp_config() -> dict[str, Any]:
+    mcp_config_path = PLUGIN_ROOT / "mcp_config.json"
+    if not mcp_config_path.is_file():
+        raise RuntimeError(f"Missing MCP server configuration: {mcp_config_path}")
+    try:
+        config = json.loads(mcp_config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid JSON in mcp_config.json: {mcp_config_path}") from error
+
+    servers = config.get("mcpServers")
+    if not isinstance(servers, dict) or PLUGIN_NAME not in servers:
+        raise RuntimeError(f"mcp_config.json must define mcpServers.{PLUGIN_NAME}")
+    server_def = servers[PLUGIN_NAME]
+    if not isinstance(server_def, dict) or not server_def.get("command"):
+        raise RuntimeError(f"mcp_config.json mcpServers.{PLUGIN_NAME} must have a valid 'command'")
+    return config
+
+
+def verify_skills() -> list[str]:
+    skills_dir = PLUGIN_ROOT / "skills"
+    if not skills_dir.is_dir():
+        raise RuntimeError(f"Missing skills directory: {skills_dir}")
+    discovered: list[str] = []
+    for skill_path in sorted(skills_dir.iterdir()):
+        if not skill_path.is_dir():
+            continue
+        skill_md = skill_path / "SKILL.md"
+        if not skill_md.is_file():
+            continue
+        content = skill_md.read_text(encoding="utf-8")
+        frontmatter_match = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+        if not frontmatter_match:
+            raise RuntimeError(f"Skill {skill_path.name} is missing YAML frontmatter in SKILL.md")
+        fm = frontmatter_match.group(1)
+        if not re.search(r"^name:\s*\S+", fm, re.MULTILINE):
+            raise RuntimeError(f"Skill {skill_path.name} frontmatter is missing 'name' attribute")
+        discovered.append(skill_path.name)
+    if not discovered:
+        raise RuntimeError(f"No valid skills found in {skills_dir}")
+    return discovered
+
+
+def verify_workspace_registration() -> None:
+    plugins_json_path = PLUGIN_ROOT / ".agents" / "plugins.json"
+    if not plugins_json_path.is_file():
+        raise RuntimeError(f"Missing workspace plugin discovery file: {plugins_json_path}")
+    try:
+        config = json.loads(plugins_json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid JSON in .agents/plugins.json: {plugins_json_path}") from error
+    entries = config.get("entries")
+    if not isinstance(entries, list) or not any(
+        isinstance(e, dict) and e.get("path") in {".", "./"} for e in entries
+    ):
+        raise RuntimeError(".agents/plugins.json must register the workspace root in 'entries'")
+
+
+def test_mcp_server_syntax() -> None:
+    node = shutil.which("node")
+    if not node:
+        raise RuntimeError("Node.js is required to run the Fmage MCP server.")
+    server_mjs = PLUGIN_ROOT / "mcp" / "server.mjs"
+    if not server_mjs.is_file():
+        raise RuntimeError(f"Missing MCP server file: {server_mjs}")
+    check = run_command([node, "--check", str(server_mjs)], capture_output=True)
+    require_success(check, "Node syntax check on mcp/server.mjs")
 
 
 def refresh_plugin(*, check_only: bool) -> None:
-    cli = resolve_codex_cli()
-    marketplace = read_marketplace_name()
-    if check_only:
-        verify_plugin(cli, marketplace)
-        print(f"Plugin is current and enabled: {PLUGIN_NAME}@{marketplace} {source_version()}")
-        return
+    manifest = verify_plugin_manifest()
+    version = manifest.get("version", "unknown")
+    verify_mcp_config()
+    skills = verify_skills()
+    verify_workspace_registration()
+    test_mcp_server_syntax()
 
-    validator = Path.home() / ".codex" / "tools" / "validate-plugin.ps1"
-    if not validator.is_file():
-        raise RuntimeError(f"Plugin validator is missing: {validator}")
-    validation = run_command(
-        [resolve_power_shell(), "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(validator), str(PLUGIN_ROOT)]
-    )
-    require_success(validation, "validating plugin")
-
-    cachebuster = run_command(
-        [sys.executable, str(helper_path("update_plugin_cachebuster.py")), str(PLUGIN_ROOT)]
-    )
-    require_success(cachebuster, "updating plugin cachebuster")
-
-    install = run_command([str(cli), "plugin", "add", f"{PLUGIN_NAME}@{marketplace}"])
-    require_success(install, "reinstalling plugin")
-    verify_plugin(cli, marketplace)
-    print(f"Plugin refreshed and verified: {PLUGIN_NAME}@{marketplace} {source_version()}")
+    status = "verified" if check_only else "refreshed and verified"
+    print(f"Plugin {status}: {PLUGIN_NAME} v{version} (skills: {', '.join(skills)})")
 
 
 def refresh_config(*, config: str | None, check_only: bool) -> None:

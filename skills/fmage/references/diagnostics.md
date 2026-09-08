@@ -8,4 +8,4 @@
 - New manifests store prompt history in `prompt_provenance`: `submitted` is always present, `source` is present only when transport adaptation changed it, and `provider_revised` is present only when the provider returned different text. `provider_prompt_status` is `not_returned`, `echoed`, or `rewritten`. Sanitized non-image response fields are stored separately in `provider_response_metadata`. Older manifests using `response_metadata.revised_prompt` remain readable.
 - For failed or partial image requests, lead with the error or warning and omit success-only fields that are not actionable.
 - Use `get_provider_status` for provider/config questions. Never print API keys.
-- If setup is required, relay the config path and required fields in Chinese. Configuration stays outside the plugin at `~/.codex/fmage/providers.json`.
+- If setup is required, relay the config path and required fields in Chinese. Configuration stays outside the plugin at `~/.gemini/antigravity/fmage/providers.json`.

@@ -8,9 +8,9 @@ python scripts/refresh_local_runtime.py
 ```
 
 The refresh must update the local `providers.json` migration fields without printing API keys and
-reinstall the local ChatGPT/Codex app plugin through the user-writable Codex app-server CLI. Use
-`--check` to verify the state without changing files.
+verify the Antigravity native plugin manifest, MCP configuration, bundled skills, and workspace
+registration. Use `--check` to verify the state without changing files.
 
 Keep unrelated pre-existing working-tree changes out of commits. After the refresh, verify that the
-plugin is installed and enabled at the manifest version and that the local configuration contains
+plugin and MCP configuration are valid at the manifest version and that the local configuration contains
 the current provider schema.

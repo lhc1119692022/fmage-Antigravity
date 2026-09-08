@@ -34,7 +34,11 @@ const PENDING_POLL_SLOW_INTERVAL_SECONDS = 45;
 const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG_PATH =
   process.env.FMAGE_CONFIG ||
-  join(process.env.CODEX_HOME || join(homedir(), ".codex"), "fmage", "providers.json");
+  join(
+    process.env.ANTIGRAVITY_HOME || join(homedir(), ".gemini", "antigravity"),
+    "fmage",
+    "providers.json",
+  );
 const TRANSPORT_OPENAI_IMAGES = "openai-images";
 const TRANSPORT_PROFILE_808 = "808";
 const TRANSPORT_EZAI_BANANA_IMAGES = "ezai-banana-images";
@@ -1567,7 +1571,7 @@ function batchJobs(args) {
     }
     const prompt = nonEmptyString(job.prompt);
     if (!prompt) {
-      throw new Error(`jobs[${index}].prompt must contain one complete Codex-revised image prompt.`);
+      throw new Error(`jobs[${index}].prompt must contain one complete image prompt.`);
     }
     return { ...job, prompt };
   });
@@ -1945,7 +1949,7 @@ async function runBatchImageCommand(command, args) {
 
 async function submitBatchImageTask(command, args, count) {
   const prompt = nonEmptyString(args.prompt);
-  if (!prompt) throw new Error("The prompt argument must contain one complete Codex-revised image prompt.");
+  if (!prompt) throw new Error("The prompt argument must contain one complete image prompt.");
   const jobs = Array.from({ length: count }, () => ({ prompt }));
   return submitBatchJobs(command, { ...args, jobs, return_when: args.return_when ?? "submitted" }, jobs, prompt);
 }
@@ -2189,7 +2193,7 @@ async function submitBatchJobs(command, args, jobs, legacyPrompt = null) {
 
 async function runSingleImageCommand(command, args, resolvedProvider = null) {
   const prompt = nonEmptyString(args.prompt);
-  if (!prompt) throw new Error("The prompt argument must contain one complete Codex-revised image prompt.");
+  if (!prompt) throw new Error("The prompt argument must contain one complete image prompt.");
 
   const singleStartedAt = isoNow();
   const provider = resolvedProvider ?? (await resolveProvider(args.provider, !args.dry_run));

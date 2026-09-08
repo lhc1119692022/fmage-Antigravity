@@ -14,8 +14,8 @@ Resolve the effective `providers.json` path and immediately reply with a clickab
 
 Path resolution:
 1. Use non-empty `FMAGE_CONFIG` exactly.
-2. Else use non-empty `CODEX_HOME`.
-3. Else use the current user's home directory plus `.codex`.
+2. Else use non-empty `ANTIGRAVITY_HOME`.
+3. Else use the current user's home directory plus `.gemini/antigravity`.
 4. Unless step 1 was used, append `fmage/providers.json`.
 
 Output:

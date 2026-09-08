@@ -20,7 +20,7 @@ PROVIDER_API_KEY = ""
 
 
 def credential_help() -> str:
-    return "Configure the selected provider in ~/.codex/fmage/providers.json."
+    return "Configure the selected provider in ~/.gemini/antigravity/fmage/providers.json."
 
 
 def configured_value(file_value: str, env_name: str, default: str = "") -> str:

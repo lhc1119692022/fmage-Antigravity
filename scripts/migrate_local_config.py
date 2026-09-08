@@ -12,7 +12,7 @@ from typing import Any
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONFIG_PATH = Path.home() / ".codex" / "fmage" / "providers.json"
+DEFAULT_CONFIG_PATH = Path.home() / ".gemini" / "antigravity" / "fmage" / "providers.json"
 OPENAI_IMAGES_TRANSPORT = "openai-images"
 LEGACY_EZAI_NANO_TRANSPORT = "ezai-banana-images"
 GEMINI_GENERATE_CONTENT_TRANSPORT = "gemini-generate-content"
@@ -34,9 +34,9 @@ def resolve_config_path(explicit: str | None = None) -> Path:
     configured = os.environ.get("FMAGE_CONFIG", "").strip()
     if configured:
         return Path(configured).expanduser().resolve()
-    codex_home = os.environ.get("CODEX_HOME", "").strip()
-    if codex_home:
-        return (Path(codex_home).expanduser() / "fmage" / "providers.json").resolve()
+    antigravity_home = os.environ.get("ANTIGRAVITY_HOME", "").strip()
+    if antigravity_home:
+        return (Path(antigravity_home).expanduser() / "fmage" / "providers.json").resolve()
     return DEFAULT_CONFIG_PATH.resolve()
 
 

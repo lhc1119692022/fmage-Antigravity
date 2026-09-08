@@ -1,0 +1,9 @@
+{
+  "name": "fmage",
+  "version": "0.1.0",
+  "description": "Generate and edit images through configurable OpenAI and Gemini-compatible providers, apply a fixed local image-regression pipeline, and manage provider configurations natively in Antigravity.",
+  "author": {
+    "name": "Local developer"
+  },
+  "disabled": false
+}

@@ -19,10 +19,10 @@ Path resolution:
 4. Unless step 1 was used, append `fmage/providers.json`.
 
 Output:
-```text
-providers.json: [providers.json](ABSOLUTE_PATH_WITH_FORWARD_SLASHES)
-路径: ABSOLUTE_NATIVE_PATH
-```
+providers.json: [providers.json](file:///ABSOLUTE_PATH_WITH_FORWARD_SLASHES)
+路径: `ABSOLUTE_NATIVE_PATH`
+
+Note: Always format the raw path `ABSOLUTE_NATIVE_PATH` as inline code with backticks (or in a code block) so Windows backslashes (e.g. `\.gemini`) are never swallowed or treated as Markdown escape characters. Use `file:///` with forward slashes for the clickable link.
 
 If `FMAGE_CONFIG` was used, add one short note that it overrides the default.
 

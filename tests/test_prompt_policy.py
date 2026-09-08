@@ -225,6 +225,22 @@ class PromptPolicyIsolationTests(unittest.TestCase):
         self.assertNotIn("prompt_profile", result)
         self.assertNotIn("provider_prompt", result)
 
+    def test_default_quality_high_keeps_resolution_at_2k(self) -> None:
+        config = self.clean_config()
+        response = self.call_image_tool(config, prompt="plain test image")
+        self.assertNotIn("error", response)
+        request = response["result"]["structuredContent"]["request"]
+        self.assertEqual(request["quality"], "high")
+        self.assertEqual(request["size"], "2048x2048")
+
+    def test_high_quality_prompt_semantic_uses_4k(self) -> None:
+        config = self.clean_config()
+        response = self.call_image_tool(config, prompt="A high-quality product image.")
+        self.assertNotIn("error", response)
+        request = response["result"]["structuredContent"]["request"]
+        self.assertEqual(request["quality"], "high")
+        self.assertEqual(request["size"], "2880x2880")
+
     def test_visual_8k_language_does_not_become_delivery_resolution(self) -> None:
         config = self.clean_config()
         prompt = "一张产品摄影图，具备8K超高分辨率、极致清晰细节和真实材质。"
@@ -239,7 +255,7 @@ class PromptPolicyIsolationTests(unittest.TestCase):
         result = response["result"]["structuredContent"]
         self.assertEqual(result["request"]["prompt"], prompt)
         self.assertNotIn("resolution", result["request"])
-        self.assertNotEqual(result["request"].get("size"), "4096x4096")
+        self.assertEqual(result["request"]["size"], "2048x2048")
         self.assertTrue(any("visual-quality language" in warning for warning in result["warnings"]))
 
     def test_unrequested_jpeg_falls_back_to_png(self) -> None:

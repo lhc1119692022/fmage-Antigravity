@@ -73,7 +73,7 @@ def is_gpt_image_model(model: str | None) -> bool:
 
 
 def default_resolution_for_model(model: str | None) -> str:
-    return "4k" if is_image_2_model(model) else DEFAULT_RESOLUTION
+    return "2k"
 
 
 def iso_now() -> str:
@@ -357,7 +357,7 @@ def infer_resolution_from_quality(
     if quality == "low":
         return "1k", "resolution_inferred_from_low_quality"
     if quality == "high":
-        resolution = "4k" if is_image_2_model(model) else "3k"
+        resolution = default_resolution_for_model(model)
         return resolution, "resolution_inferred_from_high_quality"
     if quality in {"medium", "auto"} and is_image_2_model(model):
         return "2k", f"resolution_inferred_from_{quality}_quality"

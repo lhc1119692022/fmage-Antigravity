@@ -43,23 +43,23 @@ def shape_args(model: str, command: str = "generate") -> argparse.Namespace:
 
 
 class Image2DefaultResolutionTests(unittest.TestCase):
-    def test_openai_image_2_generation_defaults_to_4k(self) -> None:
+    def test_image_models_default_to_2k(self) -> None:
         size, notes = transport.resolve_size(shape_args("gpt-image-2"), [])
-        self.assertEqual(size, "2880x2880")
-        self.assertIn("fallback_4k_square", notes)
+        self.assertEqual(size, "2048x2048")
+        self.assertIn("fallback_2k_square", notes)
 
-    def test_image_2_edit_uses_4k_with_reference_aspect(self) -> None:
+    def test_image_2_5_models_default_to_2k(self) -> None:
+        for model in ("gpt-image-2.5-flare", "gpt-image-2.5-sunburst"):
+            size, notes = transport.resolve_size(shape_args(model), [])
+            self.assertEqual(size, "2048x2048")
+            self.assertIn("fallback_2k_square", notes)
+
+    def test_image_2_edit_uses_2k_with_reference_aspect(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             image_path = Path(temp_dir) / "reference.png"
             Image.new("RGB", (2048, 1024), (1, 2, 3)).save(image_path)
-            openai_size, _ = transport.resolve_size(
-                shape_args("gpt-image-2-token", "edit"),
-                [image_path],
-            )
-            self.assertGreater(
-                transport.parse_size(openai_size)[0] * transport.parse_size(openai_size)[1],
-                2048 * 2048,
-            )
+            openai_size, _ = transport.resolve_size(shape_args("gpt-image-2-token", "edit"), [image_path])
+            self.assertGreater(transport.parse_size(openai_size)[0] * transport.parse_size(openai_size)[1], 2048 * 2048)
 
     def test_explicit_resolution_still_overrides_image_2_default(self) -> None:
         args = shape_args("gpt-image-2")
@@ -78,11 +78,7 @@ class Image2DefaultResolutionTests(unittest.TestCase):
         openai_args = shape_args("gpt-image-2")
         openai_args.quality = "high"
         openai_size, openai_notes = transport.resolve_size(openai_args, [])
-        self.assertGreater(
-            transport.parse_size(openai_size)[0] * transport.parse_size(openai_size)[1],
-            2048 * 2048,
-        )
-        self.assertEqual(openai_size, "2880x2880")
+        self.assertEqual(openai_size, "2048x2048")
         self.assertIn("resolution_inferred_from_high_quality", openai_notes)
 
 

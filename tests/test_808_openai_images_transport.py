@@ -437,14 +437,14 @@ class ServerRoutingTests(unittest.TestCase):
             ["true"],
         )
         self.assertEqual(image808["request"]["response_format"], "url")
-        self.assertEqual(image808["request"]["size"], "2880x2880")
+        self.assertEqual(image808["request"]["size"], "2048x2048")
         self.assertEqual(image808["request"]["quality"], "high")
         self.assertEqual(image808["remote_async"]["total_timeout_seconds"], 321)
 
         self.assertEqual(lookalike["provider_transport"], "openai-images")
         self.assertNotIn("async", urllib.parse.parse_qs(urllib.parse.urlsplit(lookalike["endpoint"]).query))
         self.assertNotIn("response_format", lookalike["request"])
-        self.assertEqual(lookalike["request"]["size"], "2880x2880")
+        self.assertEqual(lookalike["request"]["size"], "2048x2048")
         self.assertEqual(lookalike["request"]["quality"], "high")
 
         explicit_medium = call_server(

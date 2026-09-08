@@ -888,6 +888,28 @@ function promptHasExplicitResolutionDeliveryRequest(prompt) {
   ).test(text);
 }
 
+function promptHasHighQualityResolutionSemantic(prompt) {
+  const text = nonEmptyString(prompt);
+  if (!text) return false;
+  return /(?:高质量|高品质|超高清|高分辨率|极致清晰|ultra[-\s]?high(?:[-\s]?definition)?(?:[-\s]?resolution)?|high[-\s]?quality|high[-\s]?resolution)/iu.test(text);
+}
+
+function inferResolutionFromPrompt(args = {}) {
+  if (nonEmptyString(args.resolution) || nonEmptyString(args.size)) return args;
+  if (
+    promptUsesResolutionAsVisualQuality(args.prompt) &&
+    !promptHasExplicitResolutionDeliveryRequest(args.prompt)
+  ) {
+    return args;
+  }
+  if (!promptHasHighQualityResolutionSemantic(args.prompt)) return args;
+  return {
+    ...args,
+    resolution: "4k",
+    _resolution_inferred_from_prompt: "high_quality_resolution_semantic",
+  };
+}
+
 function visualResolutionPolicyWarning(args = {}) {
   if (args.resolution_user_requested !== true) return null;
   const resolution = nonEmptyString(args.resolution);
@@ -966,7 +988,9 @@ function enforceResolutionPolicy(args = {}) {
 }
 
 function enforceDeliveryPolicy(args = {}) {
-  return enforceResolutionPolicy(enforceOutputFormatPolicy(enforceQualityPolicy(args)));
+  return inferResolutionFromPrompt(
+    enforceResolutionPolicy(enforceOutputFormatPolicy(enforceQualityPolicy(args))),
+  );
 }
 
 function bananaModelCapability(provider) {

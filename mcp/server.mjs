@@ -307,7 +307,10 @@ async function readTaskStateWithOptions(taskId, options = {}) {
 
 function normalizeTaskForResponse(task, options = {}) {
   const images = Array.isArray(task.images) ? task.images : [];
-  const displayImages = images.map(normalizeDisplayPath).filter(Boolean);
+  const displayImages =
+    Array.isArray(task.display_images) && task.display_images.length
+      ? task.display_images
+      : images.map(normalizeDisplayPath).filter(Boolean);
   const manifests = Array.isArray(task.manifests) ? task.manifests : [];
   const displayManifests = manifests.map(normalizeDisplayPath).filter(Boolean);
   const displayManifest = normalizeDisplayPath(task.manifest);
@@ -705,6 +708,56 @@ function runProcess(command, argv, extraEnv = {}, options = {}) {
       }
     });
   });
+}
+
+const PREVIEW_SCRIPT = `
+import sys, json, io, base64
+from pathlib import Path
+from PIL import Image, ImageOps
+
+max_dim = int(sys.argv[1])
+quality = int(sys.argv[2])
+paths = sys.argv[3:]
+results = []
+resample = getattr(Image, 'Resampling', Image).LANCZOS
+
+for p_str in paths:
+    norm = p_str.replace('\\\\', '/')
+    try:
+        p = Path(p_str).expanduser().resolve()
+        if not p.is_file():
+            results.append(norm)
+            continue
+        with Image.open(p) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((max_dim, max_dim), resample=resample)
+            buf = io.BytesIO()
+            img.save(buf, format='WEBP', quality=quality)
+            results.append('data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode('ascii'))
+    except Exception:
+        results.append(norm)
+
+print(json.dumps({'previews': results}))
+`;
+
+async function generatePreviewDataUris(filePaths, maxDimension = 1024, quality = 80) {
+  if (!Array.isArray(filePaths) || !filePaths.length) return [];
+  const validPaths = filePaths.map(nonEmptyString).filter(Boolean);
+  if (!validPaths.length) return [];
+  try {
+    const result = await runProcess(
+      pythonCommand(),
+      ["-c", PREVIEW_SCRIPT, String(maxDimension), String(quality), ...validPaths],
+      { PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" },
+      { timeoutSeconds: 60 },
+    );
+    if (Array.isArray(result?.previews) && result.previews.length === validPaths.length) {
+      return result.previews;
+    }
+  } catch {
+    // Fallback gracefully to normalized paths on any error or timeout
+  }
+  return validPaths.map(normalizeDisplayPath);
 }
 
 async function runImageRegression(args) {
@@ -1536,7 +1589,7 @@ async function publishResultImages(result, args, provider) {
   }
 
   result.images = publishedImages;
-  result.display_images = publishedImages.map(normalizeDisplayPath).filter(Boolean);
+  result.display_images = await generatePreviewDataUris(publishedImages);
   result.output_dir = outputDir;
   result.cache_dir = cacheDir;
   const originalManifest = nonEmptyString(result.manifest);
@@ -1952,7 +2005,7 @@ async function combineBatchResults({
     await writeGlobalLatestState(result);
     await removeProviderLatestState(root);
   }
-  result.display_images = images.map(normalizeDisplayPath).filter(Boolean);
+  result.display_images = await generatePreviewDataUris(images);
   return result;
 }
 
@@ -2721,10 +2774,6 @@ function resultText(result, options = {}) {
   const verbose = Boolean(options.verbose);
   const includeProviderMetadata = Boolean(options.includeProviderMetadata || verbose);
   const images = Array.isArray(result.images) ? result.images : [];
-  const displayImages =
-    Array.isArray(result.display_images) && result.display_images.length
-      ? result.display_images
-      : images.map(normalizeDisplayPath).filter(Boolean);
   const request = result.request ?? {};
   const isTask = Boolean(result.task_id);
   const lines = [
@@ -2796,12 +2845,13 @@ function resultText(result, options = {}) {
       lines.push(`Timings:\n${timingLines.join("\n")}`);
     }
   }
-  if (displayImages.length) {
+  const savedImagePaths = images.map(normalizeDisplayPath).filter(Boolean);
+  if (savedImagePaths.length) {
     lines.push(
-      `${result.dry_run ? "Reference images" : "Saved images"}:\n${displayImages.join("\n")}`,
+      `${result.dry_run ? "Reference images" : "Saved images"}:\n${savedImagePaths.join("\n")}`,
     );
     if (!result.dry_run) {
-      const links = imageFileLinks(displayImages);
+      const links = imageFileLinks(savedImagePaths);
       if (links.length) lines.push(links.join("\n"));
     }
   }

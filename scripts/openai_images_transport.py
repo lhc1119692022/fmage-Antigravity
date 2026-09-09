@@ -68,6 +68,10 @@ def is_image_2_model(model: str | None) -> bool:
     return (model or "").strip().lower().startswith("gpt-image-2")
 
 
+def is_image_2_5_model(model: str | None) -> bool:
+    return (model or "").strip().lower().startswith("gpt-image-2.5")
+
+
 def is_gpt_image_model(model: str | None) -> bool:
     return (model or "").strip().lower().startswith("gpt-image-")
 
@@ -808,6 +812,8 @@ def protected_output_fields(args: argparse.Namespace) -> set[str]:
 
 
 def validate_common(args: argparse.Namespace) -> None:
+    if args.quality in {"xhigh", "max"} and not is_image_2_5_model(args.model):
+        raise ValueError("--quality xhigh and --quality max are supported only for gpt-image-2.5 series models.")
     if args.background == "transparent" and not is_gpt_image_model(args.model):
         raise ValueError("Transparent backgrounds are supported only for GPT Image models.")
     if args.background == "transparent" and args.output_format == "jpeg":
@@ -1023,7 +1029,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--size", help="Explicit WIDTHxHEIGHT or auto.")
     parser.add_argument("--aspect", help="Aspect ratio such as 1:1, 16:9, 3:4.")
     parser.add_argument("--resolution", help="Resolution tier such as 1k, 2k, 3k, 4k, or a long edge in px.")
-    parser.add_argument("--quality", choices=["low", "medium", "high", "auto"], default="high")
+    parser.add_argument("--quality", choices=["low", "medium", "high", "xhigh", "max", "auto"], default="high")
     parser.add_argument("--moderation", choices=["low", "auto"], default="low")
     parser.add_argument("--background", choices=["auto", "opaque", "transparent"], default="auto")
     parser.add_argument("--output-format", choices=["png", "jpeg", "webp"], default="png")

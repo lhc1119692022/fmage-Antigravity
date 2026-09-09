@@ -1,6 +1,6 @@
 # Delivery And Visual Language
 
-- When the user explicitly requests any quality tier, including `medium`, always pass that exact `quality`; never omit an explicit tier merely because it is the historical or current model default. If the tier differs from the selected model's default, also pass `quality_user_requested: true`.
+- When the user explicitly requests any quality tier, including `medium`, `xhigh`, or `max`, always pass that exact `quality`; never omit an explicit tier merely because it is the historical or current model default. If the tier differs from the selected model's default, also pass `quality_user_requested: true`. `xhigh` and `max` are supported only by `gpt-image-2.5` series models.
 - Phrases such as `quality low`, `low quality`, `draft quality`, `preview quality`, `草图质量`, or `低质量输出` select `quality: low` and `quality_user_requested: true`. For `草图质量` or `draft quality`, also pass `resolution: 1k` and `resolution_user_requested: true` unless the user explicitly selects another resolution.
 - An explicit `1k` request sets `resolution: 1k` and `resolution_user_requested: true`; do not infer `quality` from resolution alone. When no resolution tier or exact size was explicitly selected, omit `resolution`, `size`, and `resolution_user_requested` so the model default applies.
 - Natural-language claims such as `具备8K超高分辨率`, `8K画质`, `超高清`, `极致清晰`, or `ultra-high-resolution` are visual-quality language. Keep them in the prompt and do not map them to `resolution`, `size`, or `quality` unless the user separately specifies a delivery parameter.

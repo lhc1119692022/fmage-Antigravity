@@ -48,7 +48,13 @@ const BANANA_MODEL_CAPABILITY_SPEC = JSON.parse(
 );
 const OPENAI_IMAGES_808_DEFAULT_TIMEOUT_SECONDS = 600;
 const OPENAI_IMAGES_808_DEFAULT_RESPONSE_FORMAT = "url";
-const OPENAI_IMAGES_808_SUPPORTED_MODELS = new Set(["gpt-image-2", "gpt-image-2-token", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]);
+const OPENAI_IMAGES_808_SUPPORTED_MODELS = new Set([
+  "gpt-image-2",
+  "gpt-image-2-token",
+  "gpt-image-2.5",
+  "gpt-image-2.5-flare",
+  "gpt-image-2.5-sunburst",
+]);
 const EZAI_BANANA_DEFAULT_RESPONSE_FORMAT = "url";
 const EZAI_BANANA_SUPPORTED_RESPONSE_FORMATS = new Set(["url", "b64_json"]);
 
@@ -2411,9 +2417,9 @@ function commonProperties(editing = false) {
     },
     quality: {
       type: "string",
-      enum: ["low", "medium", "high", "auto"],
+      enum: ["low", "medium", "high", "xhigh", "max", "auto"],
       description:
-        "Delivery tier. Always pass an explicitly requested tier, including medium; omit only when the user did not select one (model default: high for gpt-image-2, medium otherwise).",
+        "Delivery tier. gpt-image-2.5 series models support low, medium, high, xhigh, max, and auto; older image models support low, medium, high, and auto. Always pass an explicitly requested tier.",
     },
     quality_user_requested: {
       type: "boolean",

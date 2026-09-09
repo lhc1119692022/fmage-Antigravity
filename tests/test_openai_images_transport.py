@@ -82,6 +82,41 @@ class Image2DefaultResolutionTests(unittest.TestCase):
         self.assertIn("resolution_inferred_from_high_quality", openai_notes)
 
 
+class Image25QualityTests(unittest.TestCase):
+    def test_image_2_5_quality_tiers_are_accepted(self) -> None:
+        parser = transport.build_parser()
+        for quality in ("xhigh", "max"):
+            args = parser.parse_args(
+                [
+                    "generate",
+                    "--prompt",
+                    "test",
+                    "--model",
+                    "gpt-image-2.5",
+                    "--quality",
+                    quality,
+                ]
+            )
+            transport.validate_common(args)
+
+    def test_legacy_image_models_reject_new_quality_tiers(self) -> None:
+        parser = transport.build_parser()
+        for quality in ("xhigh", "max"):
+            args = parser.parse_args(
+                [
+                    "generate",
+                    "--prompt",
+                    "test",
+                    "--model",
+                    "gpt-image-2",
+                    "--quality",
+                    quality,
+                ]
+            )
+            with self.assertRaisesRegex(ValueError, "supported only for gpt-image-2.5"):
+                transport.validate_common(args)
+
+
 class RequestHeaderTests(unittest.TestCase):
     def test_json_request_sets_provider_compatible_headers(self) -> None:
         captured: dict[str, object] = {}

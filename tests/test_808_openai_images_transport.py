@@ -81,6 +81,24 @@ def image808_args(command: str, output_dir: Path, *extra: str) -> argparse.Names
     return transport.build_parser().parse_args(argv)
 
 
+class Image25RoutingTests(unittest.TestCase):
+    def test_bare_image_2_5_model_is_supported(self) -> None:
+        args = image808_args("generate", Path(tempfile.gettempdir()), "--model", "gpt-image-2.5")
+        transport.validate_808_arguments(args)
+
+    def test_image_2_5_accepts_xhigh_and_max(self) -> None:
+        for quality in ("xhigh", "max"):
+            args = image808_args(
+                "generate",
+                Path(tempfile.gettempdir()),
+                "--model",
+                "gpt-image-2.5",
+                "--quality",
+                quality,
+            )
+            transport.validate_808_arguments(args)
+
+
 def call_server(config: dict[str, object], tool_name: str, arguments: dict[str, object]) -> dict[str, object]:
     with tempfile.TemporaryDirectory() as temp_dir:
         config_path = Path(temp_dir) / "providers.json"
